@@ -1,0 +1,4 @@
+﻿  源.cpp
+D:\vs\code\dazuoye\源.cpp(69,45): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+D:\vs\code\dazuoye\源.cpp(69,19): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+  dazuoye.vcxproj -> D:\vs\code\dazuoye\x64\Debug\dazuoye.exe
