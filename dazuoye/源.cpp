@@ -100,7 +100,7 @@ void gameinit() {
 	setcolor(BLACK);
 
 	loadimage(&imgzm, "D:\\vs\\code\\dazuoye\\res\\zm\\1.png");
-	loadimage(&imgbullet, "D:\vs\code\dazuoye\res\bullets\bullet_normal.png");
+	loadimage(&imgbullet, "D:\\vs\\code\\dazuoye\\res\\bullets\\bullet_normal.png");
 	memset(bullets, 0, sizeof(bullets));
 }
 
@@ -163,6 +163,7 @@ void updatewindow() {
 		}
 	}
 
+	
 	EndBatchDraw();
 	//结束双缓冲 PS：双缓冲能有效防止由于循环带来的画面不停闪烁及卡顿
 	//先把所有元素加载好再一次性输出到屏幕
@@ -295,16 +296,17 @@ void shoot() {
 	int lines[3] = { 0 };
 	int zmcount = sizeof(zms) / sizeof(zms[0]);
 	int bulletmax = sizeof(bullets) / sizeof(bullets[0]);
-	int dangerx = 900 - imgzm.getwidth();
+	int dangerx = 900 - imgzm.getwidth()+50;
 	for (int i = 0; i < zmcount; i++) {
 		if (zms[i].used && zms[i].x < dangerx) {
+			//cout << zms[i].row;
 			lines[zms[i].row] = 1;
 		}
 	}
 
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 9; j++) {
-			if (map[i][j].type == wandou + 1&&lines[i]) {
+			if (map[i][j].type == 1&&lines[i]) {
 				static int count = 0;
 				count++;
 				if (count > 20) {
@@ -315,11 +317,12 @@ void shoot() {
 						bullets[k].used = true;
 						bullets[k].row = i;
 						bullets[k].speed = 4;
-
-						int zwx = 256 + j * 81;
+						//cout << i;
+						int zwx = 256 -112+ j * 81;
 						int zwy = 179 + i * 102 + 14;
-						bullets[k].x = zwx + imgzhiwu[map[i][j].type - 1][0]->getwidth()-10;
-						bullets[k].y = zwy + 5;
+						bullets[k].x = zwx + imgzhiwu[0][0]->getwidth()+90;
+						bullets[k].y = zwy -10;
+						lines[i] = 0;
 					}
 					
 				}
@@ -357,6 +360,7 @@ void updategame() {
 	creatzm();
 	updatezm();
 	shoot();
+	updatebullet();
 }
 
 void startui() {
