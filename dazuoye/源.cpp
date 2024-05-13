@@ -3,6 +3,8 @@
 #include"tools.h"
 #include<cstring>
 #include<time.h>
+#include<mmsystem.h>
+#pragma comment(lib,"winmm.lib")
 using namespace std;
 enum {wandou,xiangrikui,zhiwucount};
 IMAGE imgbackground;
@@ -27,6 +29,28 @@ public:
 	int timer;
 };
 sunshineball balls[10];
+int sunshine;
+
+class zm {
+public:
+	int x, y;
+	bool used;
+	int speed;
+	int row;
+};
+zm zms[10];
+IMAGE imgzm;
+
+class bullet {
+public:
+	int x, y;
+	bool used;
+	int speed;
+	int row;
+};
+bullet bullets[30];
+IMAGE imgbullet;
+
 
 bool file(const char *name){
 	FILE* fp = fopen(name, "r");
@@ -62,8 +86,33 @@ void gameinit() {
 	
 	initgraph(900, 600);//创建窗口
 	curzhiwu = 0;
+	sunshine = 50;
 	srand(time(NULL));
+
+	LOGFONT f;//设置字体
+	gettextstyle(&f);
+	f.lfHeight = 30;
+	f.lfWeight = 15;
+	strcpy(f.lfFaceName, "Segoe UI Black");
+	f.lfQuality = ANTIALIASED_QUALITY;
+	settextstyle(&f);
+	setbkmode(TRANSPARENT);
+	setcolor(BLACK);
+
+	loadimage(&imgzm, "D:\\vs\\code\\dazuoye\\res\\zm\\1.png");
+	loadimage(&imgbullet, "D:\vs\code\dazuoye\res\bullets\bullet_normal.png");
+	memset(bullets, 0, sizeof(bullets));
 }
+
+void drawzm() {
+	int zmcount = sizeof(zms) / sizeof(zms[0]);
+	for (int i = 0; i < zmcount; i++) {
+		if (zms[i].used) {
+			IMAGE* img = &imgzm;
+			putimagePNG(zms[i].x, zms[i].y - img->getheight(), img);
+		}
+	}
+ }
 void updatewindow() {
 	BeginBatchDraw();//双缓冲
 	putimage(0, 0, &imgbackground);
@@ -101,9 +150,38 @@ void updatewindow() {
 			putimagePNG(balls[i].x, balls[i].y, img);
 		}
 	}
+	char score[8];
+	sprintf_s(score, sizeof(score), "%d", sunshine);
+	outtextxy(280, 67, score);
+
+	drawzm();
+
+	int bulletmax = sizeof(bullets) / sizeof(bullets[0]);
+	for (int i = 0; i < bulletmax; i++) {
+		if (bullets[i].used) {
+			putimagePNG(bullets[i].x, bullets[i].y, &imgbullet);
+		}
+	}
+
 	EndBatchDraw();
 	//结束双缓冲 PS：双缓冲能有效防止由于循环带来的画面不停闪烁及卡顿
 	//先把所有元素加载好再一次性输出到屏幕
+}
+void collect(ExMessage* msg) {
+	int count = sizeof(balls) / sizeof(balls[0]);
+	int w = imgsunshineball.getwidth();
+	int h = imgsunshineball.getheight();
+	for (int i = 0; i < count; i++) {
+		if (balls[i].used) {
+			int x = balls[i].x;
+			int y = balls[i].y;
+			if (msg->x > x && msg->x<x + w && msg->y>y && msg->y < y + h) {
+				balls[i].used = false;
+				sunshine += 25;
+				mciSendString("play res/sunshine.mp3", 0, 0, 0);
+			}
+		}
+	}
 }
 void click() {
 	ExMessage msg;//easyX自带类，用于判断是否有鼠标事件
@@ -116,6 +194,9 @@ void click() {
 				//cout << index;
 				curzhiwu = index+1;
 				status = 1;
+			}
+			else {
+				collect(&msg);
 			}
 		}
 		else if(msg.message==WM_MOUSEMOVE&&status==1){
@@ -173,6 +254,91 @@ void updatesunshine() {
 		
 	}
 }
+void creatzm() {
+	static int zmfre = 100;
+	static int count = 0;
+	count++;
+	if (count > zmfre) {
+		count = 0;
+		zmfre = rand() % 200 + 100;
+
+		int i;
+		int zmmax = sizeof(zms) / sizeof(zms[0]);
+		for (i = 0; i < zmmax && zms[i].used; i++);
+			if (i < zmmax) {
+				zms[i].used = true;
+				zms[i].x = 900;
+				zms[i].row = rand() % 3;
+				zms[i].y = 172 + (1 + zms[i].row) * 100;
+				zms[i].speed = 1;
+				
+			}
+		
+	}
+}
+void updatezm() {
+	int zmmax = sizeof(zms) / sizeof(zms[0]);
+	for (int i = 0; i < zmmax; i++) {
+		if (zms[i].used) {
+			zms[i].x -= zms[i].speed;
+			if (zms[i].x < 170) {
+				cout << "gameover";
+				MessageBox(NULL, "over", "over", 0);
+				exit(0);
+			}
+		}
+	}
+}
+
+
+void shoot() {
+	int lines[3] = { 0 };
+	int zmcount = sizeof(zms) / sizeof(zms[0]);
+	int bulletmax = sizeof(bullets) / sizeof(bullets[0]);
+	int dangerx = 900 - imgzm.getwidth();
+	for (int i = 0; i < zmcount; i++) {
+		if (zms[i].used && zms[i].x < dangerx) {
+			lines[zms[i].row] = 1;
+		}
+	}
+
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 9; j++) {
+			if (map[i][j].type == wandou + 1&&lines[i]) {
+				static int count = 0;
+				count++;
+				if (count > 20) {
+					count = 0;
+					int k;
+					for (k = 0; k < bulletmax && bullets[k].used; k++); 
+					if (k < bulletmax) {
+						bullets[k].used = true;
+						bullets[k].row = i;
+						bullets[k].speed = 4;
+
+						int zwx = 256 + j * 81;
+						int zwy = 179 + i * 102 + 14;
+						bullets[k].x = zwx + imgzhiwu[map[i][j].type - 1][0]->getwidth()-10;
+						bullets[k].y = zwy + 5;
+					}
+					
+				}
+			}
+		}
+	}
+}
+void updatebullet() {
+	int countmax = sizeof(bullets) / sizeof(bullets[0]);
+	for (int i = 0; i < countmax; i++) {
+		if (bullets[i].used) {
+			bullets[i].x += bullets[i].speed;
+			if (bullets[i].x > 900) {
+				bullets[i].used = false;
+			}
+		}
+	}
+}
+
 void updategame() {
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 9; j++) {
@@ -188,6 +354,9 @@ void updategame() {
 	}
 	creatsunshine();
 	updatesunshine();
+	creatzm();
+	updatezm();
+	shoot();
 }
 
 void startui() {
