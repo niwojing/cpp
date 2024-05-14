@@ -1,15 +1,13 @@
 #include<iostream>
-using namespace std;	//暂时不知道怎么修改
 #include<graphics.h>
 #include"tools.h"
 #include<ctime>
 #include<time.h>
 #include<math.h>
 #include"vector2.h"	//向量工具包
-
 #include<mmsystem.h>	//音乐
 #pragma comment(lib,"winmm.lib") 
-
+using namespace std;
 enum {WAN_DAO,XIANG_RI_KUI,SHI_REN_HUA,ZHI_WU_COUNT};	//植物枚举
 enum {SUNSHINE_DOWN,SUNSHINE_GROUND,SUNSHINE_COLLECT,SUNSHINE_PRODUCT};  //阳光球状态枚举
 enum { GOING, WIN, FAIL };
@@ -32,39 +30,39 @@ int gameStatus;		//游戏的状态
 
 #define ZM_MAX 10	//僵尸总数
 
-struct zhiWu {	//植物结构体
+class zhiWu {	//植物结构体
+public:
 	int type;		//0-没有植物，1-第一种植物
 	int frameIndex;	//序列帧的序号
 	int shootTimer;	//植物攻击时间间隔
 	bool catched;	//植物是否被僵尸捕获
 	int deadTimer;	//植物被吃时的死亡倒计时
-
 	int x, y;
 	int timer;	//用于向日葵生成阳光的计时器
 };
 
-struct sunShineBall {	//阳光球结构体
+class sunShineBall {	//阳光球结构体
+public:
 	int	x, y;//阳光球的x、y坐标
 	int	frameIndex;	//阳光球序列帧的序号
 	int	destY;	//阳光球停止的y坐标
 	bool used;	//阳光球是否在使用
 	int timer;	//计时器，用来限制阳光球最后的停留时间
-
 	int xoff;	//阳光球归位的x坐标
 	int yoff;	//阳光球归位的y坐标
 
 	//优化
-	float t;	//贝塞尔曲线的时间点	0，1
+	float t;	
 	vector2 p1, p2, p3, p4;
 	vector2	pCur;	//当前时刻阳光球的位置
 	float	speed;
 	int	status;	//阳光球的状态
 };
-
-struct sunShineBall	balls[10];	//阳光球池，用来事先存储阳光
+ sunShineBall	balls[10];	//阳光球池，用来事先存储阳光
 IMAGE	imgSunShineBall[29];	//阳光序列帧总数	-	可以定义一个宏，方便后期管理
 
-struct zm {		//僵尸结构体	-后期还是需要像植物一样搞个枚举,方便创建不同类型的僵尸
+class zm {		//僵尸结构体	-后期还是需要像植物一样搞个枚举,方便创建不同类型的僵尸
+public:
 	int x, y;
 	int row;
 	int frameIndex;
@@ -75,21 +73,21 @@ struct zm {		//僵尸结构体	-后期还是需要像植物一样搞个枚举,方便创建不同类型的僵尸
 	bool eating;	//僵尸是否在吃植物
 };
 
-struct zm zms[10];	//僵尸池,用来事先存储僵尸
+ zm zms[10];	//僵尸池,用来事先存储僵尸
 IMAGE	imgZm[22];	
 IMAGE	imgZmDead[10];
 IMAGE	imgZmEat[21];
 IMAGE	imgZmStand[11];
 IMAGE   imgzmhead[10];
 
-struct bullet {	//豌豆子弹结构体
+class bullet {	//豌豆子弹结构体
+public:
 	int x, y, row,speed;
 	bool used;
 	bool blast;	//是否爆炸
 	int frameIndex;	//爆炸帧序号
 };
-
-struct bullet bullets[30];	//豌豆子弹池
+ bullet bullets[30];	//豌豆子弹池
 IMAGE imgBulletNormal;
 IMAGE imgBulletBlast[4];
 
@@ -98,7 +96,7 @@ int zmMax = sizeof(zms) / sizeof(zms[0]);	//僵尸池中僵尸的总数
 
 int bulletMax = sizeof(bullets) / sizeof(bullets[0]);	//豌豆子弹池的总数
 
-struct zhiWu map[3][9];	//地图数组，方便存储植物
+zhiWu map[3][9];	//地图数组，方便存储植物
 
 int sunShine;	//阳光值
 
